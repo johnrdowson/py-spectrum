@@ -31,6 +31,7 @@ class SpectrumClient(SpectrumModelsMixin):
         datalist: List[Dict],
         filepath: AnyStr,
         exclude: Optional[List[str]] = None,
+        orderby: Optional[str] = None,
     ) -> None:
         """
         This method will store the given list of dict items to a CSV file.  The
@@ -43,6 +44,7 @@ class SpectrumClient(SpectrumModelsMixin):
         datalist
         filepath
         exclude
+        orderby
         """
         fieldnames = datalist[0].keys()
 
@@ -51,6 +53,9 @@ class SpectrumClient(SpectrumModelsMixin):
             for rec in datalist:
                 for key in exclude:
                     del rec[key]
+
+        if orderby in fieldnames:
+            datalist = sorted(datalist, key=lambda d: d[orderby].lower())
 
         with open(filepath, "w+", newline="") as outfile:
             csv_wr = csv.DictWriter(
