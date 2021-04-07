@@ -1,0 +1,50 @@
+{%- macro filter_exp(exp) %}
+{%- for key, value in exp.items() %}
+<{{key}}>
+{%- if value[0] is string %}
+<attribute id="{{ value[0] }}">
+<value>{{ value[1] }}</value>
+</attribute>
+{%- else %}
+{%- for item in value %}
+{{ filter_exp(item) }}
+{%- endfor %}
+{%- endif %}
+</{{key}}>
+{%- endfor %}
+{%- endmacro %}
+{%- macro hex_output(value) %}
+{{- '%#x' % value if value is integer else '%#x' % value|int(base=16) }}
+{%- endmacro%}
+<?xml version="1.0" encoding="UTF-8"?>
+<rs:model-request xmlns:rs="http://www.ca.com/spectrum/restful/schema/request" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" throttlesize="{{ throttlesize or 100 }}" xsi:schemaLocation="http://www.ca.com/spectrum/restful/schema/request ../../../xsd/Request.xsd ">
+    <rs:target-models>
+        <rs:models-search>
+            <rs:search-criteria xmlns="http://www.ca.com/spectrum/restful/schema/filter">
+                {{ "<devices-only-search />" if devices_only }}
+                {{ "<interfaces-of-devices-search />" if interfaces_only }}
+                {%- if child_models %}
+                <child-models>
+                {%- elif parent_models %}
+                <parent-models>
+                {%- endif %}
+                <filtered-models>
+                {%- if filter %}
+                {{ filter_exp(filter) }}
+                {%- endif %}
+                </filtered-models>
+                {%- if relation %}
+                <relation>{{ hex_output(relation) }}</relation>
+                {%- endif %}
+                {%- if child_models %}
+                </child-models>
+                {%- elif parent_models %}
+                </parent-models>
+                {%- endif %}
+            </rs:search-criteria>
+        </rs:models-search>
+    </rs:target-models>
+    {% for attr in req_attrs -%}
+    <rs:requested-attribute id="{{ hex_output(attr) }}" />
+    {% endfor -%}
+</rs:model-request>
