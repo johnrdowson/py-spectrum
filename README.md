@@ -8,7 +8,7 @@ The client it not yet available on PyPI and so must be installed directly from
 GitHub:
 
 ```text
-pip install git+https//github.com/path/to/client/repo
+pip install git+https//github.com/johnrdowson/py-spectrum
 ```
 
 ## Quick Start
