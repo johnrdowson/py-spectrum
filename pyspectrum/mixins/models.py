@@ -34,7 +34,7 @@ class SpectrumModelsMixin(SpectrumBaseClient):
         """
 
         params = {
-            "attr": self._normalize_attrs(attrs + self.base_attrs),
+            "attr": self._normalize_attrs(self.base_attrs + attrs),
             "throttlesize": self.api_throttle,
             **otherparams,
         }
@@ -51,7 +51,7 @@ class SpectrumModelsMixin(SpectrumBaseClient):
 
         res = self.api.get(
             url=f"{URIs.model}/{hex(model_handle)}",
-            params={"attr": self._normalize_attrs(attrs + self.base_attrs)},
+            params={"attr": self._normalize_attrs(self.base_attrs + attrs)},
         )
         res.raise_for_status()
 
@@ -74,7 +74,7 @@ class SpectrumModelsMixin(SpectrumBaseClient):
 
         payload = model_search_xml(
             filter=filter_dict,
-            req_attrs=self._normalize_attrs(attrs + self.base_attrs),
+            req_attrs=self._normalize_attrs(self.base_attrs + attrs),
             throttlesize=self.api_throttle,
             **otheropts,
         )
