@@ -47,6 +47,8 @@ class SpectrumModelAttributes(IntEnum):
     DEVICE_TYPE = 0x23000E
     CONDITION = 0x1000A
     TOPOLOGY_MODEL_NAME_STRING = 0x129E7
+    COLLECTIONS_MODEL_NAME_STRING = 0x12ABD
+    IS_MANAGED = 0x1295D
 
     def __str__(self) -> str:
         return hex(self.value)
