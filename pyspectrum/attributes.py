@@ -1,5 +1,4 @@
 from enum import IntEnum
-from dataclasses import dataclass
 
 
 def attr_name_to_id(attr_name: str) -> int:
@@ -31,7 +30,6 @@ def attr_id_to_name(attr_id: int) -> str:
         return hex(int(attr_id, 0))
 
 
-@dataclass
 class SpectrumModelAttributes(IntEnum):
     """ Attribute name to ID mappings """
 
