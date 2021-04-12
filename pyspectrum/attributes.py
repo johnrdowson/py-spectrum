@@ -33,7 +33,7 @@ def attr_id_to_name(attr_id: int) -> str:
 class SpectrumModelAttributes(IntEnum):
     """ Attribute name to ID mappings """
 
-    COLLECTIONS_MODEL_NAME_STRING = 0x12ABD
+    COLLECTIONS_MODEL_NAME_STRING = 0x12ADB
     CONDITION = 0x1000A
     DEVICE_TYPE = 0x23000E
     IS_MANAGED = 0x1295D
