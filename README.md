@@ -43,7 +43,7 @@ template.
 from pyspectrum import SpectrumClient
 spectrum = SpectrumClient()
 
-resp = spectrum.fetch_models(filters="model_type_name = Rtr_Cisco")
+# Simple expression
 
 resp = spectrum.fetch_models(filters="device_type ~ Juniper")
 
@@ -54,6 +54,7 @@ and (
     model_type_name = Rtr_Cisco,
     condition <= 2
 )
+"""
 
 resp = spectrum.fetch_models(filters=group_expr)
 ```
