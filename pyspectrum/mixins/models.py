@@ -26,6 +26,7 @@ class SpectrumModelsMixin(SpectrumBaseClient):
     def fetch_all_devices(
         self,
         attrs: Optional[List[Union[int, str]]] = [],
+        resolve_attrs: bool = True,
         **otherparams,
     ) -> SpectrumModelResponseList:
         """
@@ -42,10 +43,13 @@ class SpectrumModelsMixin(SpectrumBaseClient):
         res = self.api.get(url=URIs.devices, params=params)
         res.raise_for_status()
 
-        return SpectrumModelResponseList(res)
+        return SpectrumModelResponseList(res, resolve_attrs)
 
     def fetch_model(
-        self, model_handle: int, attrs: Optional[List[Union[int, str]]] = []
+        self,
+        model_handle: int,
+        attrs: Optional[List[Union[int, str]]] = [],
+        resolve_attrs: bool = True,
     ) -> SpectrumModelResponseList:
         """ Fetch model with specific attributes """
 
@@ -55,12 +59,13 @@ class SpectrumModelsMixin(SpectrumBaseClient):
         )
         res.raise_for_status()
 
-        return SpectrumModelResponseList(res)
+        return SpectrumModelResponseList(res, resolve_attrs)
 
     def fetch_models(
         self,
         filters: str,
         attrs: Optional[List[Union[int, str]]] = [],
+        resolve_attrs: bool = True,
         **otheropts,
     ) -> SpectrumModelResponseList:
         """ Fetch all models that match the given filter """
@@ -81,4 +86,4 @@ class SpectrumModelsMixin(SpectrumBaseClient):
         res = self.api.post(url=URIs.models, content=payload.encode())
         res.raise_for_status()
 
-        return SpectrumModelResponseList(res)
+        return SpectrumModelResponseList(res, resolve_attrs)
