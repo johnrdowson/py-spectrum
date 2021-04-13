@@ -55,3 +55,6 @@ class SpectrumModelAttributes(IntEnum):
 
     def __str__(self) -> str:
         return hex(self.value)
+
+    def __repr__(self) -> str:
+        return f"{str(self.name).lower()}: {hex(self.value)}"
