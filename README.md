@@ -28,7 +28,24 @@ spectrum = SpectrumClient(
 )
 
 # Fetch the complete list of devices
-all_devices = spectrum.fetch_all_devices()
+resp = spectrum.fetch_all_devices()
+
+# Dump the result to a CSV
+spectrum.to_csv(resp.result, "inventory.csv", order_by="model_name") 
+```
+
+The Spectrum API has a powerful filter which can be leveraged in the
+`fetch_models` method using a custom parser:
+
+```python
+from pyspectrum import SpectrumClient
+spectrum = SpectrumClient()
+
+filter_cisco_rtrs = "model_type_name = Rtr_Cisco"
+cisco_rtrs_resp = spectrum.fetch_models(filters=filter_cisco_rtrs)
+
+filter_junos = "device_type ~ Juniper"
+junos_resp = spectrum.fetch_models(filters=filter_junos)
 ```
 
 ## Environment Variabes
