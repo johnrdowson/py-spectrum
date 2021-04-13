@@ -52,6 +52,10 @@ class SpectrumXMLResponse:
         # Store the option to resolve attribute names
         self.resolve_attrs = resolve_attrs
 
+    def __repr__(self) -> str:
+        """ Magic repr method for Response class """
+        return f"Response <Success: {str(not self.response.is_error)}>"
+
 
 class SpectrumLandscapeResponse(SpectrumXMLResponse):
     """
