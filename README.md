@@ -60,7 +60,7 @@ provide them in your program:
 ## Attributes
 
 The Spectrum API refers to attributes using their ID, which is in hex format
-(e.g. `model_handle` is `0x129fa`). The client is contains a number of attribute
+(e.g. `model_handle` is `0x129fa`). The client contains a number of attribute
 name to ID mappings which make requesting attributes, applying filters, and
 parsing the response much more readable.
 
@@ -75,7 +75,8 @@ resp = spectrum.fetch_all_devices(attrs=[0x1102e])
 resp = spectrum.fetch_all_devices(attrs=["sys_location"])
 ```
 
-The response data will be (by default) populated with the named attribute name:
+The response data in `resp.result` will be (by default) populated with the named
+attribute name:
 
 ```json
 {
@@ -86,8 +87,8 @@ The response data will be (by default) populated with the named attribute name:
 },
 ```
 
-To disable the response parser resolving attribute IDS to name, use the
-parameter `resolve_attrs=False`.
+To disable the response parser resolving attribute IDs to name, use the
+parameter `resolve_attrs=False` in the method call.
 
 The base attributes which are requested by default are:
 
