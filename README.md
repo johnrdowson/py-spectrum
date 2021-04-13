@@ -34,18 +34,28 @@ resp = spectrum.fetch_all_devices()
 spectrum.to_csv(resp.result, "inventory.csv", order_by="model_name") 
 ```
 
-The Spectrum API has a powerful filter which can be leveraged in the
-`fetch_models` method using a custom parser:
+The Spectrum API allows a filter to be provided in the payload XML. The
+`pyspectrum` client is able to parse a string expression and translate it to a
+dictionary object which will finally be rendered to XML using a `Jinja`
+template. 
 
 ```python
 from pyspectrum import SpectrumClient
 spectrum = SpectrumClient()
 
-filter_cisco_rtrs = "model_type_name = Rtr_Cisco"
-cisco_rtrs_resp = spectrum.fetch_models(filters=filter_cisco_rtrs)
+resp = spectrum.fetch_models(filters="model_type_name = Rtr_Cisco")
 
-filter_junos = "device_type ~ Juniper"
-junos_resp = spectrum.fetch_models(filters=filter_junos)
+resp = spectrum.fetch_models(filters="device_type ~ Juniper")
+
+# Supports grouping multiple filters
+
+group_expr = """
+and (
+    model_type_name = Rtr_Cisco,
+    condition <= 2
+)
+
+resp = spectrum.fetch_models(filters=group_expr)
 ```
 
 ## Environment Variabes
@@ -75,7 +85,7 @@ resp = spectrum.fetch_all_devices(attrs=[0x1102e])
 resp = spectrum.fetch_all_devices(attrs=["sys_location"])
 ```
 
-The response data in `resp.result` will be (by default) populated with the named
+The response data in `resp.result` will be (by default) populated with the
 attribute name:
 
 ```json
