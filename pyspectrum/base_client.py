@@ -20,7 +20,6 @@ class SpectrumBaseClient:
 
     def __init__(
         self,
-        /,
         *mixin_classes,
         base_url: Optional[AnyStr] = None,
         username: Optional[AnyStr] = None,
