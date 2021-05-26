@@ -5,17 +5,11 @@ from .api import SpectrumSession
 from .responses import SpectrumLandscapeResponse
 from os import environ, getenv
 from typing import Optional, AnyStr, DefaultDict, List, Dict, Union
-from dataclasses import dataclass
 
 
 __all__ = ["SpectrumBaseClient"]
 
-
-@dataclass
-class URIs:
-    """ Identifies API URL endpoints used"""
-
-    landscapes = "/landscapes"
+URI_MAPPINGS = {"landscapes": "/landscapes"}
 
 
 class SpectrumBaseClient:
@@ -41,9 +35,9 @@ class SpectrumBaseClient:
         self.api_throttle = clientopts.pop("api_throttle", self.API_THROTTLE)
 
         # Error will be thrown is base_url not present in either args or env
-        base_url = base_url or environ[ENV.base_url]
-        username = username or getenv(ENV.username)
-        password = password or getenv(ENV.password)
+        base_url = base_url or environ[ENV["base_url"]]
+        username = username or getenv(ENV["username"])
+        password = password or getenv(ENV["password"])
 
         self.api = SpectrumSession(
             base_url=base_url + self.API_PATH,
@@ -115,6 +109,6 @@ class SpectrumBaseClient:
 
     def fetch_landscapes(self) -> SpectrumLandscapeResponse:
         """ Gets the Landscape IDs """
-        res = self.api.get(url=URIs.landscapes)
+        res = self.api.get(url=URI_MAPPINGS["landscapes"])
         res.raise_for_status()
         return SpectrumLandscapeResponse(res)
