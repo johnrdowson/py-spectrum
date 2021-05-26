@@ -1,18 +1,11 @@
-from dataclasses import dataclass
-from pyspectrum.base_client import SpectrumBaseClient
+from pyspectrum.base_client import SpectrumBaseClient, URI_MAPPINGS
 from pyspectrum.responses import SpectrumModelResponseList
 from pyspectrum.filters import parse_filter
 from pyspectrum.template import model_search_xml
 from typing import Optional, List, Union
 
 
-@dataclass
-class URIs:
-    """ Identifies API URL endpoints used"""
-
-    devices = "/devices"
-    model = "/model"
-    models = "/models"
+URI_MAPPINGS = {"devices": "/devices", "model": "/model", "models": "/models"}
 
 
 class SpectrumModelsMixin(SpectrumBaseClient):
@@ -40,7 +33,7 @@ class SpectrumModelsMixin(SpectrumBaseClient):
             **otherparams,
         }
 
-        res = self.api.get(url=URIs.devices, params=params)
+        res = self.api.get(url=URI_MAPPINGS["devices"], params=params)
         res.raise_for_status()
 
         return SpectrumModelResponseList(res, resolve_attrs)
@@ -54,7 +47,7 @@ class SpectrumModelsMixin(SpectrumBaseClient):
         """ Fetch model with specific attributes """
 
         res = self.api.get(
-            url=f"{URIs.model}/{hex(model_handle)}",
+            url=f"{URI_MAPPINGS['model']}/{hex(model_handle)}",
             params={"attr": self._normalize_attrs(self.base_attrs + attrs)},
         )
         res.raise_for_status()
@@ -83,7 +76,9 @@ class SpectrumModelsMixin(SpectrumBaseClient):
             throttlesize=self.api_throttle,
             **otheropts,
         )
-        res = self.api.post(url=URIs.models, content=payload.encode())
+        res = self.api.post(
+            url=URI_MAPPINGS["models"], content=payload.encode()
+        )
         res.raise_for_status()
 
         return SpectrumModelResponseList(res, resolve_attrs)
