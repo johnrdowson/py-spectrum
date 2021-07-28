@@ -1,65 +1,176 @@
-import csv
-from pyspectrum.mixins.models import SpectrumModelsMixin
-from typing import AnyStr, List, Dict, Optional
+from pyspectrum.attributes import SpectrumModelAttributes as Attrs
+from pyspectrum.attributes import attr_name_to_id
+from pyspectrum.api import SpectrumSession
+from pyspectrum.responses import SpectrumLandscapeResponse
+from pyspectrum.responses import SpectrumModelResponseList
+from pyspectrum.filters import parse_filter
+from pyspectrum.template import model_search_xml
+from os import environ, getenv
+from typing import Optional, AnyStr, DefaultDict, List, Dict, Union
+
 
 __all__ = ["SpectrumClient"]
 
+URI = {
+    "landscapes": "/landscapes",
+    "devices": "/devices",
+    "model": "/model",
+    "models": "/models",
+}
 
-class SpectrumClient(SpectrumModelsMixin):
-    """
-    An instance SpectrumClient is used to interact with the Spectrum OneClick
-    API via methods that abstract the underlying API calls.
+ENV = {
+    "base_url": "SPECTRUM_URL",
+    "username": "SPECTRUM_USERNAME",
+    "password": "SPECTRUM_PASSWORD",
+}
 
-    The SpectrumClient is composed of mixins, each of which address a different
-    aspect of the Spectrum product.  This composition structure allows the
-    Developer to define a client with only those feature aspects that they need
-    for their program.
 
-    To dynamically add a Mixin class, use the `mixin` method defined
-    by `SpectrumBaseClient`
+class SpectrumClient:
+    """ Spectrum Client """
 
-    Examples
-    --------
-        from pyspectrum import SpectrumClient
-        from pyspectrum.mixins import SpectrumModelsMixin
-        spectrum = SpectrumClient()
-        spectrum.mixin(SpectrumModelsMixin)
-    """
+    API_PATH = "/spectrum/restful"
+    API_THROTTLE = 9999
 
-    @staticmethod
-    def to_csv(
-        datalist: List[Dict],
-        filepath: AnyStr,
-        exclude: Optional[List[str]] = None,
-        orderby: Optional[str] = None,
+    def __init__(
+        self,
+        base_url: Optional[AnyStr] = None,
+        username: Optional[AnyStr] = None,
+        password: Optional[AnyStr] = None,
+        resolve_attrs: Optional[bool] = True,
+        **clientopts,
     ) -> None:
         """
-        This method will store the given list of dict items to a CSV file.  The
-        CSV column headers will be taken from the first list item keys.  The
-        `exclude` list can be used to omit designated columns from the CSV file,
-        for example ['model_type_id'] would omit the 'model_type_id' column.
-
-        Parameters
-        ----------
-        datalist
-        filepath
-        exclude
-        orderby
+        Initialize the client
         """
-        fieldnames = datalist[0].keys()
 
-        if exclude:
-            fieldnames = [col for col in fieldnames if col not in exclude]
-            for rec in datalist:
-                for key in exclude:
-                    del rec[key]
+        # API Throttle - Largest number of results to return in single request
 
-        if orderby in fieldnames:
-            datalist = sorted(datalist, key=lambda d: d[orderby].lower())
+        self.api_throttle = clientopts.pop("api_throttle", self.API_THROTTLE)
 
-        with open(filepath, "w+", newline="") as outfile:
-            csv_wr = csv.DictWriter(
-                outfile, fieldnames=fieldnames, quoting=csv.QUOTE_NONNUMERIC
+        # Error will be thrown is base_url not present in either args or env
+
+        base_url = base_url or environ[ENV["base_url"]]
+        username = username or getenv(ENV["username"])
+        password = password or getenv(ENV["password"])
+
+        # HTTP client session to Spectrum OneClick server
+
+        self.api = SpectrumSession(
+            base_url=base_url + self.API_PATH,
+            auth=(username, password),
+            **clientopts,
+        )
+
+        # Default attributes to request
+
+        self.base_attrs = [
+            Attrs.MODEL_HANDLE.value,
+            Attrs.MODEL_NAME.value,
+            Attrs.MODEL_TYPE_NAME.value,
+        ]
+
+        self.resolve_attrs = resolve_attrs
+
+        self.landscape = None
+
+    def __enter__(self):
+        """ Returns self when using Context Manager """
+        return self
+
+    def __exit__(self, type, value, traceback):
+        """
+        Gracefully close the httpx.Client object when exiting Context Manager
+        """
+        self.api.close()
+
+    def __repr__(self):
+        """ override the default repr to show the Spectrum base URL """
+        cls_name = self.__class__.__name__
+        base_url = self.api.base_url
+        return f"{cls_name}: {base_url}"
+
+    def close(self):
+        """ Gracefully close the httpx.Client object """
+        self.api.close()
+
+    @staticmethod
+    def _normalize_attrs(attrs: List[Union[int, str]]) -> List[str]:
+        """
+        Helper function to ingest a user-supplied list of attributes, either
+        named or as hexadecimals, and output in a consistent list of hexadecimal
+        strings for use in a Spectrum REST API call
+        """
+        return [
+            hex(attr_name_to_id(attr)) if isinstance(attr, str) else attr
+            for attr in attrs
+        ]
+
+    def get_landscapes(self) -> SpectrumLandscapeResponse:
+        """ Gets the Landscape IDs """
+        res = self.api.get(url=URI["landscapes"])
+        res.raise_for_status()
+        return SpectrumLandscapeResponse(res)
+
+    def get_devices(
+        self,
+        attrs: Optional[List[Union[int, str]]] = [],
+        resolve_attrs: bool = True,
+        **otherparams,
+    ) -> SpectrumModelResponseList:
+        """
+        Returns all device models along with the specified attributes
+        """
+
+        params = {
+            "attr": self._normalize_attrs(self.base_attrs + attrs),
+            "throttlesize": self.api_throttle,
+            **otherparams,
+        }
+
+        res = self.api.get(url=URI["devices"], params=params)
+        res.raise_for_status()
+
+        return SpectrumModelResponseList(res, resolve_attrs)
+
+    def get_model(
+        self,
+        model_handle: int,
+        attrs: Optional[List[Union[int, str]]] = [],
+        resolve_attrs: bool = True,
+    ) -> SpectrumModelResponseList:
+        """ Returns specific model and attributes """
+
+        res = self.api.get(
+            url=f"{URI['model']}/{hex(model_handle)}",
+            params={"attr": self._normalize_attrs(self.base_attrs + attrs)},
+        )
+        res.raise_for_status()
+
+        return SpectrumModelResponseList(res, resolve_attrs)
+
+    def get_models(
+        self,
+        filters: str,
+        attrs: Optional[List[Union[int, str]]] = [],
+        resolve_attrs: bool = True,
+        **otheropts,
+    ) -> SpectrumModelResponseList:
+        """ Fetch all models that match the given filter """
+
+        try:
+            filter_dict = parse_filter(filters)
+        except Exception:
+            raise ValueError(
+                f"Unable to parse filter expression:\n\n{filters}"
             )
-            csv_wr.writeheader()
-            csv_wr.writerows(datalist)
+
+        payload = model_search_xml(
+            filter=filter_dict,
+            req_attrs=self._normalize_attrs(self.base_attrs + attrs),
+            throttlesize=self.api_throttle,
+            **otheropts,
+        )
+        res = self.api.post(url=URI["models"], content=payload.encode())
+        res.raise_for_status()
+
+        return SpectrumModelResponseList(res, resolve_attrs)

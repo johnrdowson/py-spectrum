@@ -22,7 +22,6 @@ class SpectrumSession(Client):
         super().__init__(
             base_url=str(base_url),
             timeout=kwargs.pop("timeout", self.API_DEFAULT_TIMEOUT),
-            proxies=kwargs.pop("proxies", {"all://": None}),
             *args,
             **kwargs,
         )

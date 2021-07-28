@@ -68,7 +68,7 @@ class SpectrumLandscapeResponse(SpectrumXMLResponse):
         return self.xml.get("total-landscapes")
 
     @property
-    def result(self) -> List[Dict[str, str]]:
+    def data(self) -> List[Dict[str, str]]:
         """ Parsed output of a Spectrum LandscapeResponse object """
         result = []
         for landscape in self.xml:
@@ -116,7 +116,7 @@ class SpectrumModelResponseList(SpectrumXMLResponse):
         return next_info
 
     @property
-    def result(self) -> List[Dict[str, str]]:
+    def data(self) -> List[Dict[str, str]]:
         """ Parsed output of a Spectrum ModelResponseList object """
 
         parsed_models = []
