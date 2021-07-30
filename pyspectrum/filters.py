@@ -4,7 +4,7 @@ from parsimonious import Grammar, NodeVisitor
 from parsimonious.nodes import RegexNode
 from parsimonious.exceptions import IncompleteParseError
 from itertools import chain
-from .attributes import attr_name_to_id
+from pyspectrum.attributes import attr_name_to_id
 
 
 __all__ = ["parse_filter"]
