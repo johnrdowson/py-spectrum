@@ -1,11 +1,15 @@
-from .attributes import attr_id_to_name
+from pyspectrum.attributes import attr_id_to_name
 from lxml import etree
 from httpx import Response
-from typing import List, Dict
+from typing import List, Dict, Tuple
 import re
 
 
-__all__ = ["SpectrumLandscapeResponse", "SpectrumModelResponseList"]
+__all__ = [
+    "SpectrumLandscapeResponse",
+    "SpectrumModelResponseList",
+    "SpectrumAssociationResponseList",
+]
 
 
 def _camel_to_snake(name: str) -> str:
@@ -32,7 +36,7 @@ def _strip_ns(root: etree.Element) -> etree.Element:
 
 
 class SpectrumXMLResponse:
-    def __init__(self, response: Response, resolve_attrs: bool = True):
+    def __init__(self, response: Response):
         """
         Base response object which will check we have valid XML and will, by
         default, strip the XML namespaces to avoid issues with parsing
@@ -48,9 +52,6 @@ class SpectrumXMLResponse:
 
         # Strip namespaces from the XML payload
         self.xml = _strip_ns(root)
-
-        # Store the option to resolve attribute names
-        self.resolve_attrs = resolve_attrs
 
     def __repr__(self) -> str:
         """ Magic repr method for Response class """
@@ -92,6 +93,10 @@ class SpectrumModelResponseList(SpectrumXMLResponse):
     )
     start_re = re.compile(r"start=(\d+)")
     throttle_re = re.compile(r"throttlesize=(\d+)")
+
+    def __init__(self, response: Response, resolve_attrs: bool = True):
+        self.resolve_attrs = resolve_attrs
+        super().__init__(response)
 
     @property
     def total_models(self) -> int:
@@ -151,3 +156,21 @@ class SpectrumModelResponseList(SpectrumXMLResponse):
             parsed_models.append(model_dict)
 
         return parsed_models
+
+
+class SpectrumAssociationResponseList(SpectrumXMLResponse):
+    """
+    Subclass which adds properties for parsing the output of Spectrum's
+    AssociationListResponse model.
+    """
+
+    @property
+    def data(self) -> List[Tuple[str, str]]:
+        """ Associations """
+        return [
+            {
+                "leftmh": assoc.attrib.get("leftmh"),
+                "rightmh": assoc.attrib.get("rightmh"),
+            }
+            for assoc in self.xml[0]
+        ]

@@ -3,6 +3,7 @@ from pyspectrum.attributes import attr_name_to_id
 from pyspectrum.api import SpectrumSession
 from pyspectrum.responses import SpectrumLandscapeResponse
 from pyspectrum.responses import SpectrumModelResponseList
+from pyspectrum.responses import SpectrumAssociationResponseList
 from pyspectrum.filters import parse_filter
 from pyspectrum.template import model_search_xml
 from os import environ, getenv
@@ -12,6 +13,7 @@ from typing import Optional, AnyStr, DefaultDict, List, Dict, Union
 __all__ = ["SpectrumClient"]
 
 URI = {
+    "associations": "/associations/relation",
     "landscapes": "/landscapes",
     "devices": "/devices",
     "model": "/model",
@@ -174,3 +176,23 @@ class SpectrumClient:
         res.raise_for_status()
 
         return SpectrumModelResponseList(res, resolve_attrs)
+
+    def get_associations(
+        self,
+        model_handle: int,
+        rel_handle: int,
+        side: Optional[str] = "either",
+    ):
+        """
+        Get associations for a specific relation and model.
+        """
+
+        if side.lower() not in ["left", "right", "either"]:
+            raise ValueError("Associations supported: left, right, either")
+
+        res = self.api.get(
+            url=f"{URI['associations']}/{rel_handle}/model/{model_handle}",
+            params={"side": side.lower()},
+        )
+
+        return SpectrumAssociationResponseList(res)
