@@ -182,7 +182,7 @@ class SpectrumClient:
         model_handle: int,
         rel_handle: int,
         side: Optional[str] = "either",
-    ):
+    ) -> SpectrumAssociationResponseList:
         """
         Get associations for a specific relation and model.
         """
