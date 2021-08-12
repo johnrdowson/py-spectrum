@@ -33,9 +33,17 @@ def attr_id_to_name(attr_id: int) -> str:
 class SpectrumModelAttributes(IntEnum):
     """ Attribute name to ID mappings """
 
+    ALARM_CLEARED_ON = 0x482001B
+    ALARM_CLEARED_BY = 0x482001C
+    ALARM_SEVERITY = 0x11F56
     COLLECTIONS_MODEL_NAME_STRING = 0x12ADB
     CONDITION = 0x1000A
+    CREATED_BY = 0x11FB9
+    CREATED_ON = 0x11F4E
     DEVICE_TYPE = 0x23000E
+    EVENT = 0x4820007
+    EVENT_TYPE = 0x11FB8
+    EVENT_PRECEDENCE = 0x12C0A
     IS_MANAGED = 0x1295D
     LAST_SUCCESSFUL_POLL = 0x11620
     MANUFACTURER = 0x10032
