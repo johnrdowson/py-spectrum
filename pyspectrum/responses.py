@@ -1,7 +1,7 @@
 from pyspectrum.attributes import attr_id_to_name
 from lxml import etree
 from httpx import Response
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 import re
 
 
@@ -174,3 +174,44 @@ class SpectrumAssociationResponseList(SpectrumXMLResponse):
             }
             for assoc in self.xml[0]
         ]
+
+
+class SpectrumGetEventResponseList(SpectrumXMLResponse):
+    """
+    Subclass which adds properties for parsing the output of Spectrum's
+    GetEventResponseList model.
+    """
+
+    def __init__(
+        self, response: Response, resolve_attrs: Optional[bool] = True
+    ):
+        self.resolve_attrs = resolve_attrs
+        super().__init__(response)
+
+    @property
+    def data(self) -> List[Dict[str, str]]:
+        """ Parsed output of a Spectrum GetEventResponseList object """
+
+        parsed_events = []
+
+        # Parse each returned model
+        for event in self.xml[0]:
+
+            event_dict = {}
+
+            for attr in event:
+
+                # Try to resolve the attribute ID to corresponding name
+                attr_name = (
+                    attr_id_to_name(attr.get("id"))
+                    if self.resolve_attrs
+                    else attr.get("id")
+                )
+
+                attr_data = attr.text
+
+                event_dict.update({attr_name: attr_data})
+
+            parsed_events.append(event_dict)
+
+        return parsed_events
