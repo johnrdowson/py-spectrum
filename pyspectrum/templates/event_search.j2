@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rs:get-event-request throttlesize="{{ throttle_size or 100 }}" xmlns:rs="http://www.ca.com/spectrum/restful/schema/request" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.ca.com/spectrum/restful/schema/request ../../../xsd/Request.xsd ">
+    <rs:get-events-filter
+    start-time="{{ start_time }}"
+    end-time="{{ end_time }}"
+    subcomponents-events="false"
+    />
+    {% for attr in req_attrs -%}
+    <rs:requested-attribute id="{{ attr }}" />
+    {% endfor -%}
+    <rs:target-models>
+        <rs:model mh="{{ model_handle }}" />
+    </rs:target-models>
+    <rs:landscape id="{{ landscape }}" />
+</rs:get-event-request>

@@ -1,13 +1,17 @@
+from pydantic.utils import Representation
 from pyspectrum.attributes import SpectrumModelAttributes as Attrs
 from pyspectrum.attributes import attr_name_to_id
 from pyspectrum.api import SpectrumSession
 from pyspectrum.responses import SpectrumLandscapeResponse
 from pyspectrum.responses import SpectrumModelResponseList
 from pyspectrum.responses import SpectrumAssociationResponseList
+from pyspectrum.responses import SpectrumGetEventResponseList
 from pyspectrum.filters import parse_filter
-from pyspectrum.template import model_search_xml
+from pyspectrum.template import event_search_xml, model_search_xml
 from os import environ, getenv
 from typing import Optional, AnyStr, DefaultDict, List, Dict, Union
+from datetime import date, datetime, time, timedelta
+from pydantic import validate_arguments
 
 
 __all__ = ["SpectrumClient"]
@@ -18,6 +22,7 @@ URI = {
     "devices": "/devices",
     "model": "/model",
     "models": "/models",
+    "events": "/events/getEvents",
 }
 
 ENV = {
@@ -38,7 +43,6 @@ class SpectrumClient:
         base_url: Optional[AnyStr] = None,
         username: Optional[AnyStr] = None,
         password: Optional[AnyStr] = None,
-        resolve_attrs: Optional[bool] = True,
         **clientopts,
     ) -> None:
         """
@@ -71,9 +75,19 @@ class SpectrumClient:
             Attrs.MODEL_TYPE_NAME.value,
         ]
 
-        self.resolve_attrs = resolve_attrs
+        self.event_attrs = [
+            Attrs.ALARM_SEVERITY.value,
+            Attrs.ALARM_CLEARED_ON.value,
+            Attrs.ALARM_CLEARED_BY.value,
+            Attrs.EVENT.value,
+            Attrs.EVENT_TYPE.value,
+            Attrs.EVENT_PRECEDENCE.value,
+            Attrs.CREATED_ON.value,
+            Attrs.CREATED_BY.value,
+        ]
 
-        self.landscape = None
+        # The first landscape is used as a default
+        self.landscape = int(self.get_landscapes().data[0]["id"], 0)
 
     def __enter__(self):
         """ Returns self when using Context Manager """
@@ -196,3 +210,63 @@ class SpectrumClient:
         )
 
         return SpectrumAssociationResponseList(res)
+
+    @validate_arguments
+    def get_events(
+        self,
+        model_handle: int,
+        start_time: datetime,
+        end_time: Optional[datetime] = None,
+        landscape: Optional[int] = None,
+        resolve_attrs: Optional[bool] = True,
+    ) -> SpectrumGetEventResponseList:
+        """Retrieves events from Spectrum for a specific model.
+
+        Args:
+            model_handle (int): Model Handle in interger format
+            start_time (datetime): Events that occurred after this time
+            end_time (Optional[datetime], optional): Events that occured before
+                this time. Defaults to current date/time
+            landscape (Optional[int], optional): Landscape ID. Uses the default
+                if not specified
+            resolve_attrs (Optional[bool], optional): Resolve attributes in
+                event response data. Defaults to True.
+
+        Raises:
+            ValueError: If Start time is after the End time
+            ValueError: If the time period exceeds 7 days (max supported by
+                Spectrum API)
+
+        Returns:
+            SpectrumGetEventResponseList: Result data
+        """
+
+        if not end_time:
+            end_time = datetime.now()
+
+        time_diff = end_time - start_time
+
+        if time_diff < timedelta(days=0):
+            raise ValueError("Start time cannot be after end time")
+        elif time_diff > timedelta(days=7):
+            raise ValueError(
+                f"Spectrum API only supports event querys of up to 7 days. "
+                f"The period requested is {time_diff}."
+            )
+
+        req_attrs = self._normalize_attrs(self.base_attrs + self.event_attrs)
+
+        landscape = landscape or self.landscape
+
+        payload = event_search_xml(
+            model_handle=model_handle,
+            start_time=start_time,
+            end_time=end_time,
+            req_attrs=req_attrs,
+            landscape=landscape,
+        )
+
+        res = self.api.post(url=URI["events"], content=payload.encode())
+        res.raise_for_status()
+
+        return SpectrumGetEventResponseList(res, resolve_attrs)
