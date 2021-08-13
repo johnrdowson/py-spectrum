@@ -1,7 +1,7 @@
 from pyspectrum.attributes import attr_id_to_name
 from lxml import etree
 from httpx import Response
-from typing import List, Dict, Tuple, Optional
+from typing import List, Dict, Tuple
 import re
 
 
@@ -9,6 +9,7 @@ __all__ = [
     "SpectrumLandscapeResponse",
     "SpectrumModelResponseList",
     "SpectrumAssociationResponseList",
+    "SpectrumGetEventResponseList",
 ]
 
 
@@ -41,16 +42,20 @@ class SpectrumXMLResponse:
         Base response object which will check we have valid XML and will, by
         default, strip the XML namespaces to avoid issues with parsing
         """
+
         # Attempt to parse the response payload as XML
+
         try:
             root = etree.fromstring(response.content)
         except etree.XMLSyntaxError as err:
             raise ValueError(f"Unable to parse XML response\n\n{err}")
 
         # Store original HTTPX response object
+
         self.response = response
 
         # Strip namespaces from the XML payload
+
         self.xml = _strip_ns(root)
 
     def __repr__(self) -> str:
@@ -86,14 +91,6 @@ class SpectrumModelResponseList(SpectrumXMLResponse):
     ModelResponseList model.
     """
 
-    # Regex objexts used to match the elements in a paginated response
-
-    id_re = re.compile(
-        "id=([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
-    )
-    start_re = re.compile(r"start=(\d+)")
-    throttle_re = re.compile(r"throttlesize=(\d+)")
-
     def __init__(self, response: Response, resolve_attrs: bool = True):
         self.resolve_attrs = resolve_attrs
         super().__init__(response)
@@ -103,30 +100,11 @@ class SpectrumModelResponseList(SpectrumXMLResponse):
         return self.xml.get("total-models")
 
     @property
-    def throttle(self) -> int:
-        return self.xml.get("throttle")
-
-    @property
-    def next_info(self):
-        """
-        Provides the necessary parameters to make a subsequent request if not
-        all devices were returned.
-        """
-        next_info = {}
-        if not self.xml.get("error"):
-            link = self.xml[1].get("href")
-            next_info["id"] = self.id_re.search(link).group(1)
-            next_info["start"] = self.start_re.search(link).group(1)
-            next_info["throttle_size"] = self.throttle_re.search(link).group(1)
-        return next_info
-
-    @property
-    def data(self) -> List[Dict[str, str]]:
+    def result(self) -> List[Dict[str, str]]:
         """ Parsed output of a Spectrum ModelResponseList object """
 
         parsed_models = []
 
-        # Parse each returned model
         for model in self.xml[0]:
 
             model_dict = {}
@@ -134,6 +112,7 @@ class SpectrumModelResponseList(SpectrumXMLResponse):
             for attr in model:
 
                 # Try to resolve the attribute ID to corresponding name
+
                 attr_name = (
                     attr_id_to_name(attr.get("id"))
                     if self.resolve_attrs
@@ -142,6 +121,7 @@ class SpectrumModelResponseList(SpectrumXMLResponse):
 
                 # Some data may be an attribute list, in which case this is
                 # handled by adding a dictionary of the unique OIDs and values
+
                 attr_data = (
                     {
                         instance.get("oid", ""): instance.get("value", "")
@@ -165,7 +145,7 @@ class SpectrumAssociationResponseList(SpectrumXMLResponse):
     """
 
     @property
-    def data(self) -> List[Tuple[str, str]]:
+    def result(self) -> List[Tuple[str, str]]:
         """ Associations """
         return [
             {
@@ -182,19 +162,16 @@ class SpectrumGetEventResponseList(SpectrumXMLResponse):
     GetEventResponseList model.
     """
 
-    def __init__(
-        self, response: Response, resolve_attrs: Optional[bool] = True
-    ):
+    def __init__(self, response: Response, resolve_attrs: bool = True):
         self.resolve_attrs = resolve_attrs
         super().__init__(response)
 
     @property
-    def data(self) -> List[Dict[str, str]]:
+    def result(self) -> List[Dict[str, str]]:
         """ Parsed output of a Spectrum GetEventResponseList object """
 
         parsed_events = []
 
-        # Parse each returned model
         for event in self.xml[0]:
 
             event_dict = {}
@@ -202,14 +179,13 @@ class SpectrumGetEventResponseList(SpectrumXMLResponse):
             for attr in event:
 
                 # Try to resolve the attribute ID to corresponding name
+
                 attr_name = (
                     attr_id_to_name(attr.get("id"))
                     if self.resolve_attrs
                     else attr.get("id")
                 )
-
                 attr_data = attr.text
-
                 event_dict.update({attr_name: attr_data})
 
             parsed_events.append(event_dict)

@@ -1,4 +1,3 @@
-from pydantic.utils import Representation
 from pyspectrum.attributes import SpectrumModelAttributes as Attrs
 from pyspectrum.attributes import attr_name_to_id
 from pyspectrum.api import SpectrumSession
@@ -9,8 +8,8 @@ from pyspectrum.responses import SpectrumGetEventResponseList
 from pyspectrum.filters import parse_filter
 from pyspectrum.template import event_search_xml, model_search_xml
 from os import environ, getenv
-from typing import Optional, AnyStr, DefaultDict, List, Dict, Union
-from datetime import date, datetime, time, timedelta
+from typing import Optional, AnyStr, List, Union
+from datetime import datetime, timedelta
 from pydantic import validate_arguments
 
 
@@ -67,13 +66,15 @@ class SpectrumClient:
             **clientopts,
         )
 
-        # Default attributes to request
+        # Default model attributes to request
 
         self.base_attrs = [
             Attrs.MODEL_HANDLE.value,
             Attrs.MODEL_NAME.value,
             Attrs.MODEL_TYPE_NAME.value,
         ]
+
+        # Default event attributes to request
 
         self.event_attrs = [
             Attrs.ALARM_SEVERITY.value,
@@ -87,7 +88,8 @@ class SpectrumClient:
         ]
 
         # The first landscape is used as a default
-        self.landscape = int(self.get_landscapes().data[0]["id"], 0)
+
+        self.landscape = int(self.get_landscapes().data[0]["id"], 16)
 
     def __enter__(self):
         """ Returns self when using Context Manager """

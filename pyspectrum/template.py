@@ -20,9 +20,10 @@ TEMPLATE_FILES = {
 }
 
 
-def _render_template(template_file, context):
-    """ Helper function to return the correct Jinja2 temaplate file """
-    return TEMPLATE_ENV.get_template(template_file).render(context)
+def render_template(template_file, context):
+    """ Helper function to render the content and format returned data """
+    xml_string = TEMPLATE_ENV.get_template(template_file).render(context)
+    return re.sub(r"^$\n", "", xml_string, flags=re.MULTILINE)
 
 
 def model_search_xml(**params):
@@ -30,8 +31,7 @@ def model_search_xml(**params):
     Uses Jinja2 to render the Spectrum Model Search XML payload using the
     supplied arguments.
     """
-    xml_string = _render_template(TEMPLATE_FILES["model_search"], params)
-    return re.sub(r"^$\n", "", xml_string, flags=re.MULTILINE)
+    return render_template(TEMPLATE_FILES["model_search"], params)
 
 
 def event_search_xml(
@@ -53,5 +53,4 @@ def event_search_xml(
     params["end_time"] = int(end_time.timestamp()) * 1000
     params["req_attrs"] = req_attrs
 
-    xml_string = _render_template(TEMPLATE_FILES["event_search"], params)
-    return re.sub(r"^$\n", "", xml_string, flags=re.MULTILINE)
+    return render_template(TEMPLATE_FILES["event_search"], params)
