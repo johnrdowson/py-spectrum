@@ -8,7 +8,7 @@ The client it not yet available on PyPI and so must be installed directly from
 GitHub:
 
 ```text
-pip install git+https//github.com/johnrdowson/py-spectrum
+pip install git+https://github.com/johnrdowson/py-spectrum
 ```
 
 ## Quick Start
@@ -27,10 +27,15 @@ spectrum = SpectrumClient(
     password='P@55w0rd'
 )
 
-# Fetch the complete list of devices
-resp = spectrum.fetch_all_devices()
+# Specify attributes to retrieve. These can be using the hex code or using the
+# attribute name (See attributes.py file for a list of named attributes
+# supported)
+attrs = ["network_address", "serial_number", 0x1102E]
 
-# Dump the result to a CSV
+# Fetch the complete list of devices
+resp = spectrum.get_devices()
+
+# Process the data or optinally dump the result to a CSV
 spectrum.to_csv(resp.result, "inventory.csv", order_by="model_name") 
 ```
 
@@ -45,7 +50,7 @@ spectrum = SpectrumClient()
 
 # Simple expression
 
-resp = spectrum.fetch_models(filters="device_type ~ Juniper")
+resp = spectrum.get_models(filters="device_type ~ Juniper")
 
 # Supports grouping multiple filters
 
@@ -56,7 +61,7 @@ and (
 )
 """
 
-resp = spectrum.fetch_models(filters=group_expr)
+resp = spectrum.get_models(filters=group_expr)
 ```
 
 ## Environment Variabes
@@ -80,10 +85,10 @@ the ID (`0x1102e`):
 
 ```python
 # By ID (can be string or integer)
-resp = spectrum.fetch_all_devices(attrs=[0x1102e])
+resp = spectrum.get_devices(attrs=[0x1102e])
 
 # By name
-resp = spectrum.fetch_all_devices(attrs=["sys_location"])
+resp = spectrum.get_devices(attrs=["sys_location"])
 ```
 
 The response data in `resp.result` will be (by default) populated with the
@@ -114,7 +119,3 @@ A list of attributes that support using the name can be viewed on the
 from pyspectrum.attributes import SpectrumModelAttributes
 list(SpectrumModelAttributes)
 ```
-
-## Filters
-
-To do.

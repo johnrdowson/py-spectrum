@@ -23,7 +23,7 @@ class SpectrumModelsMixin(SpectrumBaseClient):
         - models
     """
 
-    def fetch_all_devices(
+    def get_devices(
         self,
         attrs: Optional[List[Union[int, str]]] = [],
         resolve_attrs: bool = True,
@@ -45,7 +45,7 @@ class SpectrumModelsMixin(SpectrumBaseClient):
 
         return SpectrumModelResponseList(res, resolve_attrs)
 
-    def fetch_model(
+    def get_model(
         self,
         model_handle: int,
         attrs: Optional[List[Union[int, str]]] = [],
@@ -61,7 +61,7 @@ class SpectrumModelsMixin(SpectrumBaseClient):
 
         return SpectrumModelResponseList(res, resolve_attrs)
 
-    def fetch_models(
+    def get_models(
         self,
         filters: str,
         attrs: Optional[List[Union[int, str]]] = [],

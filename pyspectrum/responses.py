@@ -37,9 +37,13 @@ class SpectrumXMLResponse:
         Base response object which will check we have valid XML and will, by
         default, strip the XML namespaces to avoid issues with parsing
         """
+
         # Attempt to parse the response payload as XML
+
+        _xparser = etree.XMLParser(recover=True, remove_blank_text=True)
+
         try:
-            root = etree.fromstring(response.content)
+            root = etree.fromstring(response.content, parser=_xparser)
         except etree.XMLSyntaxError as err:
             raise ValueError(f"Unable to parse XML response\n\n{err}")
 
