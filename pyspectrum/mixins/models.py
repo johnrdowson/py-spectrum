@@ -24,12 +24,23 @@ class SpectrumModelsMixin(SpectrumBaseClient):
         - models
     """
 
-    # Default model attributes in a request
+    # General model attributes in a request
 
     MODEL_ATTRS = [
         Attrs.MODEL_HANDLE.value,
         Attrs.MODEL_NAME.value,
         Attrs.MODEL_TYPE_NAME.value,
+    ]
+
+    # Default device attributes to request
+
+    DEVICE_ATTRS = [
+        Attrs.DEVICE_TYPE.value,
+        Attrs.IS_MANAGED.value,
+        Attrs.NETWORK_ADDRESS.value,
+        Attrs.CONDITION.value,
+        Attrs.TOPOLOGY_MODEL_NAME_STRING.value,
+        Attrs.COLLECTIONS_MODEL_NAME_STRING.value,
     ]
 
     def get_all_devices(
@@ -44,7 +55,9 @@ class SpectrumModelsMixin(SpectrumBaseClient):
         """
 
         params = {
-            "attr": self._normalize_attrs(self.MODEL_ATTRS + attrs),
+            "attr": self._normalize_attrs(
+                self.MODEL_ATTRS + (attrs or self.DEVICE_ATTRS)
+            ),
             "throttlesize": self.api_throttle,
             **otherparams,
         }
