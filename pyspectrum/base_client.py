@@ -1,8 +1,7 @@
-from .consts import ENV
-from .attributes import SpectrumModelAttributes as Attrs
-from .attributes import attr_name_to_id
-from .api import SpectrumSession
-from .responses import SpectrumLandscapeResponse
+from pyspectrum.consts import ENV
+from pyspectrum.attributes import attr_name_to_id
+from pyspectrum.api import SpectrumSession
+from pyspectrum.responses import SpectrumLandscapeResponse
 from os import environ, getenv
 from typing import Optional, AnyStr, DefaultDict, List, Dict, Union
 from dataclasses import dataclass
@@ -58,13 +57,6 @@ class SpectrumBaseClient:
         if mixin_classes:
             self.mixin(*mixin_classes)
 
-        # Default model attributes in a request
-        self.base_attrs = [
-            Attrs.MODEL_HANDLE.value,
-            Attrs.MODEL_NAME.value,
-            Attrs.MODEL_TYPE_NAME.value,
-        ]
-
         self.landscape = None
 
     def __enter__(self):
@@ -113,7 +105,7 @@ class SpectrumBaseClient:
             self.__class__.__name__, (self.__class__, *mixin_cls), {}
         )
 
-    def fetch_landscapes(self) -> SpectrumLandscapeResponse:
+    def get_landscapes(self) -> SpectrumLandscapeResponse:
         """ Gets the Landscape IDs """
         res = self.api.get(url=URIs.landscapes)
         res.raise_for_status()

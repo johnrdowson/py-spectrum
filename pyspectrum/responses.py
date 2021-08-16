@@ -1,4 +1,4 @@
-from .attributes import attr_id_to_name
+from pyspectrum.attributes import attr_id_to_name
 from lxml import etree
 from httpx import Response
 from typing import List, Dict

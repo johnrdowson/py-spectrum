@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pyspectrum.attributes import SpectrumModelAttributes as Attrs
 from pyspectrum.base_client import SpectrumBaseClient
 from pyspectrum.responses import SpectrumModelResponseList
 from pyspectrum.filters import parse_filter
@@ -23,7 +24,15 @@ class SpectrumModelsMixin(SpectrumBaseClient):
         - models
     """
 
-    def get_devices(
+    # Default model attributes in a request
+
+    MODEL_ATTRS = [
+        Attrs.MODEL_HANDLE.value,
+        Attrs.MODEL_NAME.value,
+        Attrs.MODEL_TYPE_NAME.value,
+    ]
+
+    def get_all_devices(
         self,
         attrs: Optional[List[Union[int, str]]] = [],
         resolve_attrs: bool = True,
@@ -35,7 +44,7 @@ class SpectrumModelsMixin(SpectrumBaseClient):
         """
 
         params = {
-            "attr": self._normalize_attrs(self.base_attrs + attrs),
+            "attr": self._normalize_attrs(self.MODEL_ATTRS + attrs),
             "throttlesize": self.api_throttle,
             **otherparams,
         }
@@ -55,7 +64,7 @@ class SpectrumModelsMixin(SpectrumBaseClient):
 
         res = self.api.get(
             url=f"{URIs.model}/{hex(model_handle)}",
-            params={"attr": self._normalize_attrs(self.base_attrs + attrs)},
+            params={"attr": self._normalize_attrs(self.MODEL_ATTRS + attrs)},
         )
         res.raise_for_status()
 
@@ -65,10 +74,11 @@ class SpectrumModelsMixin(SpectrumBaseClient):
         self,
         filters: str,
         attrs: Optional[List[Union[int, str]]] = [],
-        resolve_attrs: bool = True,
+        resolve_attrs: Optional[bool] = True,
+        devices_only: Optional[bool] = False,
         **otheropts,
     ) -> SpectrumModelResponseList:
-        """ Fetch all models that match the given filter """
+        """ Search models that match the given filter """
 
         try:
             filter_dict = parse_filter(filters)
@@ -79,8 +89,9 @@ class SpectrumModelsMixin(SpectrumBaseClient):
 
         payload = model_search_xml(
             filter=filter_dict,
-            req_attrs=self._normalize_attrs(self.base_attrs + attrs),
+            req_attrs=self._normalize_attrs(self.MODEL_ATTRS + attrs),
             throttlesize=self.api_throttle,
+            devices_only=devices_only,
             **otheropts,
         )
         res = self.api.post(url=URIs.models, content=payload.encode())
