@@ -45,8 +45,10 @@ class SpectrumXMLResponse:
 
         # Attempt to parse the response payload as XML
 
+        _xparser = etree.XMLParser(recover=True, remove_blank_text=True)
+
         try:
-            root = etree.fromstring(response.content)
+            root = etree.fromstring(response.content, parser=_xparser)
         except etree.XMLSyntaxError as err:
             raise ValueError(f"Unable to parse XML response\n\n{err}")
 
@@ -74,7 +76,7 @@ class SpectrumLandscapeResponse(SpectrumXMLResponse):
         return self.xml.get("total-landscapes")
 
     @property
-    def data(self) -> List[Dict[str, str]]:
+    def result(self) -> List[Dict[str, str]]:
         """ Parsed output of a Spectrum LandscapeResponse object """
         result = []
         for landscape in self.xml:

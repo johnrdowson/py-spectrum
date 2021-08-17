@@ -1,15 +1,17 @@
-from pyspectrum.attributes import SpectrumModelAttributes as Attrs
-from pyspectrum.attributes import attr_name_to_id
-from pyspectrum.api import SpectrumSession
-from pyspectrum.responses import SpectrumLandscapeResponse
-from pyspectrum.responses import SpectrumModelResponseList
-from pyspectrum.responses import SpectrumAssociationResponseList
-from pyspectrum.responses import SpectrumGetEventResponseList
-from pyspectrum.filters import parse_filter
-from pyspectrum.template import event_search_xml, model_search_xml
 from os import environ, getenv
 from typing import Optional, AnyStr, List, Union
 from datetime import datetime, timedelta
+
+from pyspectrum.api import SpectrumSession
+from pyspectrum.attributes import SpectrumModelAttributes as Attrs
+from pyspectrum.attributes import attr_name_to_id
+from pyspectrum.filters import parse_filter
+from pyspectrum.responses import SpectrumAssociationResponseList
+from pyspectrum.responses import SpectrumGetEventResponseList
+from pyspectrum.responses import SpectrumLandscapeResponse
+from pyspectrum.responses import SpectrumModelResponseList
+from pyspectrum.template import event_search_xml, model_search_xml
+
 from pydantic import validate_arguments
 
 
@@ -87,9 +89,7 @@ class SpectrumClient:
             Attrs.CREATED_BY.value,
         ]
 
-        # The first landscape is used as a default
-
-        self.landscape = int(self.get_landscapes().data[0]["id"], 16)
+        self.landscape = None
 
     def __enter__(self):
         """ Returns self when using Context Manager """
@@ -166,11 +166,12 @@ class SpectrumClient:
 
         return SpectrumModelResponseList(res, resolve_attrs)
 
-    def get_models(
+    def search_models(
         self,
         filters: str,
         attrs: Optional[List[Union[int, str]]] = [],
         resolve_attrs: bool = True,
+        devices_only: bool = False,
         **otheropts,
     ) -> SpectrumModelResponseList:
         """ Fetch all models that match the given filter """
@@ -186,6 +187,7 @@ class SpectrumClient:
             filter=filter_dict,
             req_attrs=self._normalize_attrs(self.base_attrs + attrs),
             throttlesize=self.api_throttle,
+            devices_only=devices_only,
             **otheropts,
         )
         res = self.api.post(url=URI["models"], content=payload.encode())
@@ -222,26 +224,7 @@ class SpectrumClient:
         landscape: Optional[int] = None,
         resolve_attrs: Optional[bool] = True,
     ) -> SpectrumGetEventResponseList:
-        """Retrieves events from Spectrum for a specific model.
-
-        Args:
-            model_handle (int): Model Handle in interger format
-            start_time (datetime): Events that occurred after this time
-            end_time (Optional[datetime], optional): Events that occured before
-                this time. Defaults to current date/time
-            landscape (Optional[int], optional): Landscape ID. Uses the default
-                if not specified
-            resolve_attrs (Optional[bool], optional): Resolve attributes in
-                event response data. Defaults to True.
-
-        Raises:
-            ValueError: If Start time is after the End time
-            ValueError: If the time period exceeds 7 days (max supported by
-                Spectrum API)
-
-        Returns:
-            SpectrumGetEventResponseList: Result data
-        """
+        """Retrieves events from Spectrum for a specific model"""
 
         if not end_time:
             end_time = datetime.now()
@@ -259,6 +242,9 @@ class SpectrumClient:
         req_attrs = self._normalize_attrs(self.base_attrs + self.event_attrs)
 
         landscape = landscape or self.landscape
+
+        if not landscape:
+            landscape = int(self.get_landscapes().result[0]["id"], 16)
 
         payload = event_search_xml(
             model_handle=model_handle,
